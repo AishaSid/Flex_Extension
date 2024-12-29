@@ -1,0 +1,98 @@
+body {
+   font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+   margin: 0;
+   font-size: 16px;
+ }
+ .container 
+ {
+   background-color: #1f0450;
+   color: #e6d0fc;
+   width: 300px;
+   padding: 30px;
+   border-radius: 5px;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+ }
+ h1 
+ {
+   font-size: 24px;
+   margin-bottom: 20px;
+ }
+ button 
+ {
+   font-size: 14px;
+   padding: 7px 13px;
+   border-radius: 5px;
+   background-color: #4014a0;
+   color: #f3ddf9;
+   border: none;
+   cursor: pointer;
+   transition: background-color 0.5s ease;
+   margin: 5px;
+ }
+ button:hover 
+ {
+   background-color: #5227b1;
+ }
+ button:active 
+ {
+   background-color: #27076b;
+   transform: scale(0.95);
+ }
+ button:focus 
+ {
+   outline: none;
+   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+ }
+ .hidden
+{
+     display: none;  
+} 
+
+.options item 
+{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#options button
+{
+ border-radius: 2px;
+ margin: 10px 20px;
+ padding: 10px 20px;
+}
+
+
+form div 
+{
+  display: flex;
+  justify-content: space-between;
+  margin: 10px;
+  width: 250px;
+}
+
+form label 
+{
+  margin-left: 0;
+  text-align: left;
+}
+
+form input 
+{
+  width: 30px;
+}
+form .g1-btn
+{
+  display: flex;
+  justify-content: flex-end;
+}
+
+hr
+{
+  width: 100%;
+}
+
+
+

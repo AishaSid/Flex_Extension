@@ -1,14 +1,17 @@
 {
-  "name": "Jugaadu Flex",
-  "description": "A Chrome Extension to make FlexStudent better",
+  "name": "Flex Extension",
   "manifest_version": 3,
-  "version": "2.2.1",
+  "version": "2.1",
   "permissions": ["scripting", "tabs"],
-  "host_permissions": ["*://flexstudent.nu.edu.pk/*"],
+  "author": "aisha siddiqa",
+  "host_permissions": ["*://*/*"],
   "action": {
     "default_popup": "popup.html"
+    "default_icon": "flex-icon.png"
   },
   "icons": {
-    "128": "favicon.png"
+    "128": "flex-icon.png"
   }
 }
+
+
