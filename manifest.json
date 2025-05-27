@@ -6,7 +6,7 @@
   "author": "aisha siddiqa",
   "host_permissions": ["*://*/*"],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "index.html",
     "default_icon": "flex-icon.png"
   },
   "icons": {

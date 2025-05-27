@@ -1,86 +1,51 @@
-const marksForm = document.getElementById("grand-marks");
-marksForm.addEventListener("submit", handleMarksFormSubmit);
 // FOR FLEX MARKS --- by fahad sheikh
 const marksForm = document.getElementById("btn");
 if (marksForm) { marksForm.addEventListener('click', handleMarksFormSubmit);}
 else{console.log("there is error");}
 
-const feedbackForm = document.getElementById("feedback-form");
-feedbackForm.addEventListener("submit", handleFeedbackFormSubmit);
 //TO SHOW THE BUTTONS
 const btn2 = document.getElementById("btn-2");
 if (btn2) { btn2.addEventListener('click', predButton);}
 else{ console.log("there is error >.<");}
 
-const gpaCalculatorForm = document.getElementById("gpa-calculator");
-gpaCalculatorForm.addEventListener("submit", handleCalculatorFormSubmit);
 //GRADES
 document.getElementById('grade1').addEventListener('submit', absPredict);
 document.getElementById('grade2').addEventListener('submit', gradePredict);
 
-const admitCardForm = document.getElementById("admit-card");
-admitCardForm.addEventListener("submit", handleAdmitCardSubmit);
 //TO SHOW THE GPA
 const gpa = document.getElementById("gpa");
 if (gpa) { gpa.addEventListener('click', manageGPA);}
 else{ console.log("there is error >.<");}
 
-async function handleMarksFormSubmit(event) {
-  event.preventDefault();
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  let url;
-  if (tab?.url) {
-    try {
-      url = new URL(tab.url);
-      if (url.hostname !== "flexstudent.nu.edu.pk") {
-        alert("Please open the FlexStudent website first.");
-        return;
-      }
-    } catch {}
-  }
 //TO SHOW THE Grades
 const grade = document.getElementById("grades");
 if (grade) { grade.addEventListener('click', manageGrades);}
 else{ console.log("there is error >.<");}
 
-  chrome.scripting.executeScript({ target: { tabId: tab.id }, function: marksMainFunction });
-}
+var g_form = null;
 
-async function handleCalculatorFormSubmit(event) {
+
+async function handleMarksFormSubmit(event) 
+{
   event.preventDefault();
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   let url;
-  if (tab?.url) {
-    try {
+  if (tab?.url) 
+  {
+    try 
+    {
       url = new URL(tab.url);
-      if (url.hostname !== "flexstudent.nu.edu.pk") {
+      if (url.hostname !== "flexstudent.nu.edu.pk")
+      {
         alert("Please open the FlexStudent website first.");
         return;
       }
-    } catch {}
-  }
-
-  chrome.scripting.executeScript({ target: { tabId: tab.id }, function: calculatorMainFunction });
-}
-
-async function handleFeedbackFormSubmit(event) {
-  event.preventDefault();
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  let url;
-  if (tab?.url) {
-    try {
-      url = new URL(tab.url);
-      if (url.hostname !== "flexstudent.nu.edu.pk") {
-        alert("Please open the FlexStudent website first.");
-        return;
-      }
-    } catch {}
-  }
-
-  const input = document.querySelector('input[name="feedback-radio"]:checked');
-  if (!input) {
-    alert("Please select a feedback option first.");
-    return;
+    }
+    catch 
+    {
+      console.log("there is error in catch");
+      return;
+    }
   }
   Options.classList.add('hidden');
   if(g_form !== null)
@@ -89,24 +54,26 @@ async function handleFeedbackFormSubmit(event) {
   var fahad = document.getElementsByClassName("fahad")[0];
   fahad.innerText = "Credits to Fahad Sheikh xD";
 
-  chrome.scripting.executeScript({ target: { tabId: tab.id }, function: feedbackMainFunction, args: [input.value] });
+  chrome.scripting.executeScript({ target: { tabId: tab.id }, function: marksMainFunction });
 }
-
-async function marksMainFunction() {
-  if (!window.location.href.includes("Student/StudentMarks")) {
+async function marksMainFunction() 
+{
+  
+  if (!window.location.href.includes("Student/StudentMarks"))
+  {
     alert("Please Open Marks Page First");
     return;
   }
-
-  const getTd = (className, id) => {
+  const getTd = (className, id) => 
+  {
     const td = document.createElement('td');
     td.classList.add("text-center");
     td.classList.add(className);
     td.id = id;
     return td;
   }
-
-  const getTr = (id) => {
+  const getTr = (id) => 
+  {
     const tr = document.createElement('tr');
     tr.classList.add("totalColumn_" + id);
     tr.appendChild(getTd("totalColGrandTotal", "GrandtotalColMarks_" + id));
@@ -117,84 +84,80 @@ async function marksMainFunction() {
     tr.appendChild(getTd("totalColStdDev", "GrandtotalClassStdDev_" + id));
     return tr;
   }
+  async function set_marks(courseId, id) 
+  {
+    var temp = "totalColumn_" + id;
+    var grandTotal = 0;
+    var totalObtained = 0;
+    var totalAverage = 0;
+    var totalMinimum = 0;
+    var totalMaximum = 0;
 
-  const parseFloatOrZero = (value) => {
-    const parsedValue = parseFloat(value);
-    return isNaN(parsedValue) ? 0 : parsedValue;
-  }
-
-  const checkBestOff = (section, weightage) => {
-    const calculationRows = section.querySelectorAll(`.calculationrow`);
-    let weightsOfAssessments = 0;
-    let count = 0;
-    for (let row of calculationRows) {
-      const weightageOfAssessment = parseFloatOrZero(row.querySelector('.weightage').textContent);
-      weightsOfAssessments += weightageOfAssessment;
-
-      if (weightage < weightsOfAssessments) {
-        return count;
-      }
-      count++;
-    }
-    return count;
-  }
-
-  const reorderCalculationRows = (section, bestOff) => {
-    const sectionArray = Array.from(section.querySelectorAll(`.calculationrow`));
-    sectionArray.sort((a, b) => {
-      const aObtained = parseFloatOrZero(a.querySelector('.ObtMarks').textContent);
-      const bObtained = parseFloatOrZero(b.querySelector('.ObtMarks').textContent);
-      return bObtained - aObtained;
-    });
-    return sectionArray.slice(0, bestOff);
-  }
-
-  async function set_marks(courseId, id) {
     const course = document.getElementById(courseId);
-    const sections = course.querySelectorAll(`div[id^="${courseId}"]:not([id$="Grand_Total_Marks"])`);
+    if (!course)
+      {
+      return;
+    }
+    const totalRows = course.querySelectorAll(`.${temp}`);
+    if (!totalRows) {
+      return;
+    }
+    for (let i = 0; i < totalRows.length; i++) {
+      const row = totalRows[i];
+      const weightage = row.querySelector('.totalColweightage');
+      if (weightage && weightage.textContent != "") {
+        grandTotal += parseFloat(weightage.textContent);
+      }
+      const obtMarks = row.querySelector('.totalColObtMarks');
+      if (obtMarks && obtMarks.textContent != "") {
+        totalObtained += parseFloat(obtMarks.textContent);
 
-    let globalWeightage = 0;
-    let globalObtained = 0;
-    let globalAverage = 0;
-    let globalMinimum = 0;
-    let globalMaximum = 0;
-    
-    for (let section of sections) {
-      const totalRow = section.querySelector(`.totalColumn_${id}`);
-      const localWeightage = parseFloat(totalRow.querySelector('.totalColweightage').textContent);
-      const localObtained = parseFloat(totalRow.querySelector('.totalColObtMarks').textContent);
-
-      globalWeightage += localWeightage;
-      globalObtained += localObtained;
-
-      // Check if there are any best off marks
-      const bestOff = checkBestOff(section, localWeightage);
-      const calculationRows = reorderCalculationRows(section, bestOff);
-
-      for (let row of calculationRows) {
-        const weightage = parseFloatOrZero(row.querySelector('.weightage').textContent);
-        const obtained = parseFloatOrZero(row.querySelector('.ObtMarks').textContent);
-        const total = parseFloatOrZero(row.querySelector('.GrandTotal').textContent);
-        const average = parseFloatOrZero(row.querySelector('.AverageMarks').textContent);
-        const minimum = parseFloatOrZero(row.querySelector('.MinMarks').textContent);
-        const maximum = parseFloatOrZero(row.querySelector('.MaxMarks').textContent);
-
-        globalAverage += average * (weightage / total);
-        globalMinimum += minimum * (weightage / total);
-        globalMaximum += maximum * (weightage / total);
       }
     }
+    const calculationRows = course.querySelectorAll(`.calculationrow`);
+    if (!calculationRows)
+    {
+      return;
+    }
+    for (let i = 0; i < calculationRows.length; i++) {
+      const row = calculationRows[i];
+      const averageMarks = row.querySelector('.AverageMarks');
+      const totalMarks = row.querySelector('.GrandTotal');
+      const minMarks = row.querySelector('.MinMarks');
+      const maxMarks = row.querySelector('.MaxMarks');
+      const weightage = row.querySelector('.weightage');
+      if (averageMarks && averageMarks.textContent != "" && totalMarks && totalMarks.textContent != "" && weightage && weightage.textContent != "" && minMarks && minMarks.textContent != "" && maxMarks && maxMarks.textContent != "") {
+        const avg = parseFloat(averageMarks.textContent) * parseFloat(weightage.textContent) / parseFloat(totalMarks.textContent);
+        totalAverage += avg;
 
-    document.getElementById(`GrandtotalColMarks_${id}`).textContent = globalWeightage.toFixed(2);
-    document.getElementById(`GrandtotalObtMarks_${id}`).textContent = globalObtained.toFixed(2);
-    document.getElementById(`GrandtotalClassAvg_${id}`).textContent = globalAverage.toFixed(2);
-    document.getElementById(`GrandtotalClassMin_${id}`).textContent = globalMinimum.toFixed(2);
-    document.getElementById(`GrandtotalClassMax_${id}`).textContent = globalMaximum.toFixed(2);
+        const min = parseFloat(minMarks.textContent) * parseFloat(weightage.textContent) / parseFloat(totalMarks.textContent);
+        totalMinimum += min;
+
+        const max = parseFloat(maxMarks.textContent) * parseFloat(weightage.textContent) / parseFloat(totalMarks.textContent);
+        totalMaximum += max;
+      }
+    }
+    if ((!isNaN(grandTotal))) {
+      document.getElementById(`GrandtotalColMarks_${id}`).textContent = grandTotal.toFixed(2);
+    }
+    if ((!isNaN(totalObtained))) {
+      document.getElementById(`GrandtotalObtMarks_${id}`).textContent = totalObtained.toFixed(2);
+    }
+    if ((!isNaN(totalAverage))) {
+      document.getElementById(`GrandtotalClassAvg_${id}`).textContent = totalAverage.toFixed(2);
+    }
+    if ((!isNaN(totalMinimum))) {
+      document.getElementById(`GrandtotalClassMin_${id}`).textContent = totalMinimum.toFixed(2);
+    }
+    if ((!isNaN(totalMaximum))) {
+      document.getElementById(`GrandtotalClassMax_${id}`).textContent = totalMaximum.toFixed(2);
+    }
   }
 
-  const courses = document.querySelectorAll(`div[class*='tab-pane']`); // Get all courses
+  const courses = document.querySelectorAll(`div[class*='tab-pane']`); 
 
-  for (let i = 0; i < courses.length; i++) {
+  for (let i = 0; i < courses.length; i++) 
+  {
     const courseId = courses[i].id;
     const button = courses[i].querySelector(`button[onclick*="ftn_calculateMarks"]`);
     if (button) {
@@ -206,52 +169,26 @@ async function marksMainFunction() {
     }
   }
 }
+function predButton()
+{
+  var fahad = document.getElementsByClassName("fahad")[0];
+  fahad.innerText= "";
 
-async function feedbackMainFunction(input) {
-  if (!window.location.href.includes("Student/FeedBackQuestions")) {
-    alert("Please Open Feedback Page of a Specific Course First");
-    return;
-  }
+  var Options = document.getElementById('Options');
 
-  function selectSpecificRadio(element, input) {
-    const radioButtonsSpan = element.getElementsByClassName('m-list-timeline__time');
-    for (let i = 0; i < radioButtonsSpan.length; i++) {
-        if (radioButtonsSpan[i].textContent.trim() === input) {
-            const radioButton = radioButtonsSpan[i].querySelector('input[type="radio"]');
-            radioButton.checked = true;
-            break;
-        }
+    if (Options.classList.contains('hidden')) 
+    {
+      Options.classList.remove('hidden');
+    } else 
+    {
+      Options.classList.add('hidden');
     }
-  }
-  
-  function selectSpecificFeedback(input) {
-    const questions = document.getElementsByClassName('m-list-timeline__item');
-    Array.from(questions).forEach(question => {
-        selectSpecificRadio(question, input);
-    });
-  }
-  
-  function selectRandomFeedback() {
-    const questions = document.getElementsByClassName('m-list-timeline__item');
-    Array.from(questions).forEach(question => {
-        const radioButtonsSpan = question.getElementsByClassName('m-list-timeline__time');
-        const randomIndex = Math.floor(Math.random() * radioButtonsSpan.length);
-        const radioButton = radioButtonsSpan[randomIndex].querySelector('input[type="radio"]');
-        radioButton.checked = true;
-    });
-  }
-
-  input === "Randomize" ? selectRandomFeedback() : selectSpecificFeedback(input);
-} 
     var fahad = document.getElementsByClassName("fahad")[0];
     fahad.innerText = (`Credits to Aisha S 22i-1281`);
     if(g_form !== null)
     {g_form.classList.add('hidden');}
 }
 
-async function calculatorMainFunction() {
-  if (!window.location.href.includes("Student/Transcript")) {
-    alert("Please Open Transcript Page first");
 //GRADES
 function manageGrades()
 {
@@ -285,22 +222,6 @@ function manageGrades()
     form1.classList.remove('hidden'); 
     return;
   }
-
-  const getSelect = (currGrade) => {
-    return `<select>
-      <option value="-1">-</option>
-      <option value="4" ${currGrade == 'A+' || currGrade == 'A' ? 'selected' : ''}>A/A+</option>
-      <option value="3.67" ${currGrade == 'A-' ? 'selected' : ''}>A-</option>
-      <option value="3.33" ${currGrade == 'B+' ? 'selected' : ''}>B+</option>
-      <option value="3" ${currGrade == 'B' ? 'selected' : ''}>B</option>
-      <option value="2.67" ${currGrade == 'B-' ? 'selected' : ''}>B-</option>
-      <option value="2.33" ${currGrade == 'C+' ? 'selected' : ''}>C+</option>
-      <option value="2" ${currGrade == 'C' ? 'selected' : ''}>C</option>
-      <option value="1.67" ${currGrade == 'C-' ? 'selected' : ''}>C-</option>
-      <option value="1.33" ${currGrade == 'D+' ? 'selected' : ''}>D+</option>
-      <option value="1" ${currGrade == 'D' ? 'selected' : ''}>D</option>
-      <option value="0" ${currGrade == 'F' ? 'selected' : ''}>F</option>
-    </select>`;
   else
   {
     g_form.classList.add('hidden');
@@ -350,24 +271,12 @@ function manageGPA()
        form1.classList.remove('hidden');  
 }
 
-  const getSUcredithours = () => {
-    return Array.from(document.getElementsByTagName('td'))
-        .filter((td) => td.innerText == 'S' || td.innerText == 'U')
-        .reduce((total, curr) => total + parseInt(curr.previousElementSibling.innerText), 0);
-  }
 //GRADE1 
 function absPredict(event) 
 {
   event.preventDefault();
   var abc = document.getElementsByClassName("result1")[0];
 
-  let semesters = document.getElementsByClassName("col-md-6");
-  let lastSemester = semesters[semesters.length - 1];
-  let spans = lastSemester.querySelectorAll("span");
-  
-  let cgpa = 0;
-  let cgpaelem = spans[2];
-  let sgpaelem = spans[3];
   let avg_abs = parseFloat(document.getElementById('avg_abs').value);   //from user
   let your_abs = parseFloat(document.getElementById('your_abs').value);  
   let total_abs = parseFloat(document.getElementById('total_abs').value); //from user
@@ -377,65 +286,40 @@ function absPredict(event)
 let av_perc = avg_abs / total_abs;
 let ans = (rem_abs * av_perc);  
 
-  let crEarned = 0;
 
-  if(semesters.length > 1){
-    let secondLastSemester = semesters[semesters.length - 2];
-    crEarned = parseInt(secondLastSemester.querySelectorAll("span")[1].innerText.split(':')[1]);
-    cgpa = parseFloat(secondLastSemester.querySelectorAll("span")[2].innerText.split(':')[1]);
-  }
- 
-  let rows = lastSemester.querySelectorAll('tbody > tr');
 const gradeOrder = [ "F","D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+"];
 
 let a = gradeOrder.indexOf(wish_grade);
 let b = gradeOrder.indexOf(avg_grade);
 let ans2 = (a - b) * 4;
 
-  for (let row of rows) {
-    row.querySelectorAll('td.text-center')[1].innerHTML = getSelect(row.querySelectorAll('td.text-center')[1].innerText);
 if (isNaN(total_abs) || isNaN(avg_abs) || isNaN(your_abs) || (a === -1)|| (b === -1) || total_abs > 100 || avg_abs >= 100 || your_abs >= 100)
   {
     abc.innerText = "Please enter valid entries";
     return;
   }
 
-  const getCorrespondingCreditHours = (selectelem) => parseInt(selectelem.parentElement.previousElementSibling.innerText);
-
-  const handleSelectChange = (e) => {
-    let selects = document.getElementsByTagName('select');
-    let totalCreditHours = 0;
-    let totalGradePoints = 0;
-    for (let select of selects) {
-      if (select.value != -1) {
-        totalCreditHours += getCorrespondingCreditHours(select);
-        totalGradePoints += parseFloat(getCorrespondingCreditHours(select)) * parseFloat(select.value);
-        select.parentElement.nextElementSibling.innerText = select.value;
-        select.parentElement.nextElementSibling.style.fontWeight = 'bold';
-      } else {
-        select.parentElement.nextElementSibling.innerText = '-';
-        select.parentElement.nextElementSibling.style.fontWeight = 'normal';
-      }
+if (rem_abs <= 1)
+{
+  let g = (your_abs - avg_abs) / 4;
+  let min_grade = gradeOrder[b + Math.floor(g)];
+  let max_grade = gradeOrder[b + Math.floor(g) + 1];
+  
+  if (min_grade === "A+" || (min_grade === undefined && g > 0 ))
+    { 
+      min_grade = "A+";
+      max_grade = "A+";
     }
-    if (totalCreditHours == 0) {
-      cgpaelem.innerHTML = `CGPA: ${cgpa.toFixed(2)}`;
-      sgpaelem.innerHTML = `SGPA: 0`;
-      return;
   if(max_grade === "F" ||  max_grade === undefined)
     {
     min_grade ="F";
     max_grade ="F";
     }
-    let calculatedSGPA = totalGradePoints / totalCreditHours;
-    let actualCreditHoursEarned = crEarned - getSUcredithours();
-    let calculatedCGPA = (cgpa * actualCreditHoursEarned + calculatedSGPA * totalCreditHours) / (actualCreditHoursEarned + totalCreditHours);
 
-    cgpaelem.innerHTML = `CGPA: ${calculatedCGPA.toFixed(2)}`;
-    sgpaelem.innerHTML = `SGPA: ${calculatedSGPA.toFixed(2)}`;
+  let result1 =  (`Your Req grade maybe at: ${(ans2+avg_abs).toFixed(2)} (or -3 abs) -> ${wish_grade}\nAvg abs: ${(avg_abs).toFixed(2)} -> ${avg_grade}\nYour predicted Grade is min ${min_grade}`);
+  if(min_grade !== max_grade)
+   result1 += (` and max ${max_grade}`);
 
-    // set cgpaelem and sgpaelem to bold
-    cgpaelem.style.fontWeight = 'bold';
-    sgpaelem.style.fontWeight = 'bold';
   abc.innerText = result1;
   return;
 }
@@ -455,12 +339,6 @@ else
 {
   avg_abs += ans +3;
 
-  // add event listener to all select elements
-  Array.from(document.getElementsByTagName('select')).forEach((select) => {
-    select.addEventListener('change', handleSelectChange)
-  });
-
-  handleSelectChange();
   if (ans2+avg_abs >= 100  || ans2+avg_abs <= 20)
     {
       abc.innerText = "Please enter valid entries.";
@@ -472,50 +350,24 @@ else
 }
 }
 
-async function handleAdmitCardSubmit(event) {
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  let url;
-  if (tab?.url) {
-    try {
-      url = new URL(tab.url);
-      if (url.hostname !== "flexstudent.nu.edu.pk") {
-        alert("Please open the FlexStudent website first.");
-        return;
-      }
-    } catch {}
-  }
 //GRADE2
 function gradePredict(event) 
 {
   event.preventDefault();
   var abc = document.getElementsByClassName("result2")[0];
 
-  const input = document.getElementById("admit-card-radio");
-  if (!input) {
-    alert("Please select an option first.");
-    return;
-  }
+let avg_abs = parseFloat(document.getElementById('avg_abs1').value); 
+let your_abs = parseFloat(document.getElementById('your_abs1').value);  
+let max_abs = parseFloat(document.getElementById('max_abs').value); 
 
-  chrome.scripting.executeScript({ target: { tabId: tab.id }, function: admitCardMainFunction, args: [input.value] });
-}
 const gradeOrder = [ "F","D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+"];
 
-async function admitCardMainFunction(inputValue) {
-  if (!(inputValue === "Sessional-I" || inputValue === "Sessional-II" || inputValue === "Final")) {
+  if(isNaN(max_abs) || isNaN(avg_abs) || isNaN(your_abs) || your_abs > max_abs || avg_abs >= max_abs || max_abs >=100 || max_abs <= 0 || avg_abs <= 0 || your_abs <= 0)
+  {
+    abc.innerText = "Should Enter valid values";
     return;
   }
-  const resp = await fetch(`https://flexstudent.nu.edu.pk/Student/AdmitCardByRollNo?cardtype=${inputValue}&type=pdf`, { 
-    method: 'POST'
-  });
-  const blob = await resp.blob();
-  const url = URL.createObjectURL(blob); 
-
-  let a = document.createElement('a');
-  a.href = url;
-  a.download = `Admit_Card_${inputValue}.pdf`;
-  a.click();
-  URL.revokeObjectURL(url);
-}  
+  
   let a = Math.floor((max_abs - avg_abs) / 4);
   let b = Math.floor((max_abs - your_abs) / 4);
   let index1 = gradeOrder.length-1-a
