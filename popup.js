@@ -17,6 +17,19 @@ const gpa = document.getElementById("gpa");
 if (gpa) { gpa.addEventListener('click', manageGPA);}
 else{ console.log("there is error >.<");}
 
+// GPA CALCULATOR - NEW BUTTON HANDLER
+const gpaCalculatorForm = document.getElementById("gpa-calculator");
+if (gpaCalculatorForm) {
+  gpaCalculatorForm.addEventListener("submit", handleCalculatorFormSubmit);
+}
+
+// PRINT ADMIT CARD - NEW BUTTON HANDLER
+const admitCardForm = document.getElementById("admit-card");
+if (admitCardForm) {
+  admitCardForm.addEventListener("submit", handleAdmitCardSubmit);
+}
+
+
 //TO SHOW THE Grades
 const grade = document.getElementById("grades");
 if (grade) { grade.addEventListener('click', manageGrades);}
@@ -234,25 +247,25 @@ function manageGrades()
 function manageGPA()
 {
   let body = document.querySelector('body');
-  body.style.backgroundColor = "#1f0450";
-  body.style.color = "#e6d0fc"
+  // body.style.backgroundColor = "#1f0450";
+  // body.style.color = "#e6d0fc"
   let btn = document.querySelectorAll('button');
-  btn.forEach((btns)=>
-     {btns.style.backgroundColor = "#4014a0"
-      btns.style.color = "#f3ddf9";
-      btns.addEventListener('mouseover', () => btns.style.backgroundColor = "#5227b1");
-      btns.addEventListener('mouseout', () => btns.style.backgroundColor = "#4014a0");
-      btns.addEventListener('mousedown', () => 
-        {
-        btns.style.backgroundColor = "#27076b";
-        btns.style.transform = "scale(0.95)";
-        });
-      btns.addEventListener('mouseup', () => 
-        {
-        btns.style.backgroundColor = "#4014a0";
-        btns.style.transform = "scale(1)";
-        });
-     });
+  // btn.forEach((btns)=>
+  //    {btns.style.backgroundColor = "#4014a0"
+  //     btns.style.color = "#f3ddf9";
+  //     btns.addEventListener('mouseover', () => btns.style.backgroundColor = "#5227b1");
+  //     btns.addEventListener('mouseout', () => btns.style.backgroundColor = "#4014a0");
+  //     btns.addEventListener('mousedown', () => 
+  //       {
+  //       btns.style.backgroundColor = "#27076b";
+  //       btns.style.transform = "scale(0.95)";
+  //       });
+  //     btns.addEventListener('mouseup', () => 
+  //       {
+  //       btns.style.backgroundColor = "#4014a0";
+  //       btns.style.transform = "scale(1)";
+  //       });
+  //    });
 
      var form1;
      if(g_form === null)
@@ -382,5 +395,161 @@ const gradeOrder = [ "F","D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A",
 let res = `Let's say highest is ${max_abs} -> A+ and A is at ${max_abs-4}\nGrade of average is ${avg_abs} ->${g1} and your grade is ${your_abs} -> ${g2}`;
 
 abc.innerText = res;
+}
+
+
+async function handleCalculatorFormSubmit(event) {
+  event.preventDefault();
+  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  let url;
+  if (tab?.url) {
+    try {
+      url = new URL(tab.url);
+      if (url.hostname !== "flexstudent.nu.edu.pk") {
+        alert("Please open the FlexStudent website first.");
+        return;
+      }
+    } catch {}
+  }
+
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    function: calculatorMainFunction
+  });
+}
+
+async function calculatorMainFunction() {
+  if (!window.location.href.includes("Student/Transcript")) {
+    alert("Please Open Transcript Page first");
+    return;
+  }
+
+  const getSelect = (currGrade) => {
+    return `<select>
+      <option value="-1">-</option>
+      <option value="4" ${currGrade == 'A+' || currGrade == 'A' ? 'selected' : ''}>A/A+</option>
+      <option value="3.67" ${currGrade == 'A-' ? 'selected' : ''}>A-</option>
+      <option value="3.33" ${currGrade == 'B+' ? 'selected' : ''}>B+</option>
+      <option value="3" ${currGrade == 'B' ? 'selected' : ''}>B</option>
+      <option value="2.67" ${currGrade == 'B-' ? 'selected' : ''}>B-</option>
+      <option value="2.33" ${currGrade == 'C+' ? 'selected' : ''}>C+</option>
+      <option value="2" ${currGrade == 'C' ? 'selected' : ''}>C</option>
+      <option value="1.67" ${currGrade == 'C-' ? 'selected' : ''}>C-</option>
+      <option value="1.33" ${currGrade == 'D+' ? 'selected' : ''}>D+</option>
+      <option value="1" ${currGrade == 'D' ? 'selected' : ''}>D</option>
+      <option value="0" ${currGrade == 'F' ? 'selected' : ''}>F</option>
+    </select>`;
+  }
+
+  const getSUcredithours = () => {
+    return Array.from(document.getElementsByTagName('td'))
+      .filter((td) => td.innerText == 'S' || td.innerText == 'U')
+      .reduce((total, curr) => total + parseInt(curr.previousElementSibling.innerText), 0);
+  }
+
+  let semesters = document.getElementsByClassName("col-md-6");
+  let lastSemester = semesters[semesters.length - 1];
+  let spans = lastSemester.querySelectorAll("span");
+
+  let cgpa = 0;
+  let cgpaelem = spans[2];
+  let sgpaelem = spans[3];
+  let crEarned = 0;
+
+  if (semesters.length > 1) {
+    let secondLastSemester = semesters[semesters.length - 2];
+    crEarned = parseInt(secondLastSemester.querySelectorAll("span")[1].innerText.split(':')[1]);
+    cgpa = parseFloat(secondLastSemester.querySelectorAll("span")[2].innerText.split(':')[1]);
+  }
+
+  let rows = lastSemester.querySelectorAll('tbody > tr');
+  for (let row of rows) {
+    row.querySelectorAll('td.text-center')[1].innerHTML = getSelect(row.querySelectorAll('td.text-center')[1].innerText);
+  }
+
+  const getCorrespondingCreditHours = (selectelem) => parseInt(selectelem.parentElement.previousElementSibling.innerText);
+
+  const handleSelectChange = () => {
+    let selects = document.getElementsByTagName('select');
+    let totalCreditHours = 0;
+    let totalGradePoints = 0;
+    for (let select of selects) {
+      if (select.value != -1) {
+        totalCreditHours += getCorrespondingCreditHours(select);
+        totalGradePoints += parseFloat(getCorrespondingCreditHours(select)) * parseFloat(select.value);
+        select.parentElement.nextElementSibling.innerText = select.value;
+        select.parentElement.nextElementSibling.style.fontWeight = 'bold';
+      } else {
+        select.parentElement.nextElementSibling.innerText = '-';
+        select.parentElement.nextElementSibling.style.fontWeight = 'normal';
+      }
+    }
+
+    if (totalCreditHours === 0) {
+      cgpaelem.innerHTML = `CGPA: ${cgpa.toFixed(2)}`;
+      sgpaelem.innerHTML = `SGPA: 0`;
+      return;
+    }
+
+    let calculatedSGPA = totalGradePoints / totalCreditHours;
+    let actualCreditHoursEarned = crEarned - getSUcredithours();
+    let calculatedCGPA = (cgpa * actualCreditHoursEarned + calculatedSGPA * totalCreditHours) / (actualCreditHoursEarned + totalCreditHours);
+
+    cgpaelem.innerHTML = `CGPA: ${calculatedCGPA.toFixed(2)}`;
+    sgpaelem.innerHTML = `SGPA: ${calculatedSGPA.toFixed(2)}`;
+    cgpaelem.style.fontWeight = 'bold';
+    sgpaelem.style.fontWeight = 'bold';
+  }
+
+  Array.from(document.getElementsByTagName('select')).forEach((select) => {
+    select.addEventListener('change', handleSelectChange);
+  });
+
+  handleSelectChange();
+}
+
+async function handleAdmitCardSubmit(event) {
+  event.preventDefault();
+  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  let url;
+  if (tab?.url) {
+    try {
+      url = new URL(tab.url);
+      if (url.hostname !== "flexstudent.nu.edu.pk") {
+        alert("Please open the FlexStudent website first.");
+        return;
+      }
+    } catch {}
+  }
+
+  const input = document.getElementById("admit-card-radio");
+  if (!input) {
+    alert("Please select an option first.");
+    return;
+  }
+
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    function: admitCardMainFunction,
+    args: [input.value]
+  });
+}
+
+async function admitCardMainFunction(inputValue) {
+  if (!(inputValue === "Sessional-I" || inputValue === "Sessional-II" || inputValue === "Final")) {
+    return;
+  }
+
+  const resp = await fetch(`https://flexstudent.nu.edu.pk/Student/AdmitCardByRollNo?cardtype=${inputValue}&type=pdf`, {
+    method: 'POST'
+  });
+
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = `Admit_Card_${inputValue}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
